@@ -5,9 +5,12 @@ const express = require("express"),
   bcrypt = require("bcrypt");
 require("./database/connection");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 function generateAccessToken(username) {
-  return jwt.sign(username, process.env.SECURE_TOKEN, { expiresIn: "1800s" });
+  return jwt.sign({ username: username }, process.env.SECURE_TOKEN, {
+    expiresIn: "1h",
+  });
 }
 
 function authenticateToken(req, res, next) {
@@ -16,9 +19,7 @@ function authenticateToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
-    // taking log from the error
-    console.log(err);
+  jwt.verify(token, process.env.SECURE_TOKEN, (err, user) => {
     // set the error state of the result
     if (err) return res.sendStatus(403);
     // init user real value
@@ -42,6 +43,7 @@ app.post("/signin", (req, res) => {
           res.json({ result: true, token: jwt_token });
         })
         .catch((error) => {
+          console.log(error);
           if (error.code === 11000) {
             res.status(500).json({
               result: false,
@@ -60,22 +62,32 @@ app.post("/signin", (req, res) => {
   });
 });
 
-app.post("/login", authenticateToken, (req, res) => {
-  const findUser = { username: req.body.username, email: req.body.email };
-  userModel
-    .findOne(findUser)
-    .then(function ({ password }) {
-      bcrypt.compare(req.body.password, password, function (err, result) {
-        if (result) {
-          res.json({ result: true });
-        } else {
-          res.json({ result: false, msg: "your password not correct!" });
-        }
-      });
-    })
-    .catch((error) => {
-      res.status(500).json({ result: false, msg: "the user not exist!" });
+app.post("/login", (req, res) => {
+  const findUser =
+    req.body.method === "1"
+      ? { email: req.body.email }
+      : { username: req.body.username };
+  const FindUserPromise = userModel.findOne(findUser);
+  FindUserPromise.then(function (user) {
+    console.log("USER I search: ", user);
+    bcrypt.compare(req.body.password, user.password, function (err, result) {
+      if (result) {
+        res.json({
+          result: true,
+          token: generateAccessToken(req.body.username),
+        });
+      } else {
+        res.json({ result: false, msg: "your password not correct!" });
+      }
     });
+  }).catch((error) => {
+    console.log(error);
+    res.status(500).json({ result: false, msg: "the user not exist!" });
+  });
+});
+
+app.post("/Auth", authenticateToken, (req, res) => {
+  res.send(req.user.username);
 });
 
 app.listen(process.env.PORT, () => {
