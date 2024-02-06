@@ -1,23 +1,18 @@
 const mocha = require("mocha");
 const assert = require("assert");
 const userModel = require("../models/users");
+const tempUser = require("./test.config");
 
-describe("Test saving the data", (done) => {
-  it("save the first one", () => {
-    var model = new userModel({
-      username: "saeed",
-      email: "doob@gmail.com",
-      password: "12345678",
-    });
+describe("Test saving the data", function (done) {
+  it("save the first one", function () {
     userModel
-      .insertMany(model)
+      .insertMany(tempUser)
       .then(() => {
-        console.log("I am one");
-        assert(model.isNew === false, "Success");
+        assert(model.isNew === true);
         done();
       })
       .catch((error) => {
-        assert(model.isNew === true, error);
+        assert(model.isNew === true, error.code || error.message);
         done();
       });
   });

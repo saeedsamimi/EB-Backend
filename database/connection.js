@@ -24,14 +24,9 @@ mongoose.connect(url);
 const connection = mongoose.connection;
 // set connection open event listeners
 connection.once("open", () => {
-  console.log("connection opened!, Firework... 🌹");
+  console.log("connection stablished!");
 });
 // set connection error event listener
 connection.on("error", function (error) {
-  console.log(
-    "❌Error occured with message: ",
-    error.msg,
-    " nor code: ",
-    error.code
-  );
+  console.log("Cannot connect to db!", error.msg);
 });

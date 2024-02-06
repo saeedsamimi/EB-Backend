@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "proxy": "http://lcoalhost:8080",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
