@@ -5,6 +5,7 @@ const express = require("express"),
   bcrypt = require("bcrypt"),
   jwt = require("jsonwebtoken");
 require("dotenv").config();
+require("./database/connection");
 
 function generateAccessToken(username) {
   return jwt.sign({ username: username }, process.env.SECURE_TOKEN, {
@@ -69,7 +70,6 @@ app.post("/login", (req, res) => {
   userModel
     .findOne(findUser)
     .then(function (user) {
-      console.log("USER I search: ", user);
       bcrypt.compare(req.body.password, user.password, function (err, result) {
         if (result) {
           res.json({
@@ -92,7 +92,7 @@ app.post("/Auth", authenticateToken, (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("HELLO WELCOME to backend ❤");
+  res.send("HELLO WELCOME ❤");
 });
 
 app.listen(process.env.PORT, () => {
