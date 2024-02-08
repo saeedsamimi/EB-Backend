@@ -4,6 +4,7 @@
   "proxy": "http://lcoalhost:8080",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "test": "mocha",
     "dev": "nodemon server.js"
   },
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "cors": "^2.8.5",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "should": "^13.2.3"
   }
 }

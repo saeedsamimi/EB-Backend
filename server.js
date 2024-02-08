@@ -2,10 +2,9 @@ const express = require("express"),
   app = express(),
   userModel = require("./models/users"),
   cors = require("cors"),
-  bcrypt = require("bcrypt");
-require("./database/connection");
+  bcrypt = require("bcrypt"),
+  jwt = require("jsonwebtoken");
 require("dotenv").config();
-const jwt = require("jsonwebtoken");
 
 function generateAccessToken(username) {
   return jwt.sign({ username: username }, process.env.SECURE_TOKEN, {
@@ -67,27 +66,33 @@ app.post("/login", (req, res) => {
     req.body.method === "1"
       ? { email: req.body.email }
       : { username: req.body.username };
-  const FindUserPromise = userModel.findOne(findUser);
-  FindUserPromise.then(function (user) {
-    console.log("USER I search: ", user);
-    bcrypt.compare(req.body.password, user.password, function (err, result) {
-      if (result) {
-        res.json({
-          result: true,
-          token: generateAccessToken(req.body.username),
-        });
-      } else {
-        res.json({ result: false, msg: "your password not correct!" });
-      }
+  userModel
+    .findOne(findUser)
+    .then(function (user) {
+      console.log("USER I search: ", user);
+      bcrypt.compare(req.body.password, user.password, function (err, result) {
+        if (result) {
+          res.json({
+            result: true,
+            token: generateAccessToken(req.body.username),
+          });
+        } else {
+          res.json({ result: false, msg: "your password not correct!" });
+        }
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ result: false, msg: "the user not exist!" });
     });
-  }).catch((error) => {
-    console.log(error);
-    res.status(500).json({ result: false, msg: "the user not exist!" });
-  });
 });
 
 app.post("/Auth", authenticateToken, (req, res) => {
   res.send(req.user.username);
+});
+
+app.get("/", (req, res) => {
+  res.send("HELLO WELCOME to backend ❤");
 });
 
 app.listen(process.env.PORT, () => {

@@ -1,32 +1,29 @@
 // improt or require mongoDB mmongoose package!
 const mongoose = require("mongoose");
 // include the dev.config
-const db = require("../dev.config").db;
-// enabling the ES6 global promises
-mongoose.Promise = global.Promise;
+const { user, pass, host, port, db, add } = require("../dev.config").db;
 // configuring url
 const url =
   "mongodb://" +
-  db.user +
+  user +
   ":" +
-  db.pass +
+  pass +
   "@" +
-  db.host +
+  host +
   ":" +
-  db.port +
+  port +
   "/" +
-  db.db +
+  db +
   "?" +
-  db.add;
-// Connect to db
-mongoose.connect(url);
+  add;
 // use abbreviative form of mongoose.connection...
 const connection = mongoose.connection;
+mongoose.connect(url);
 // set connection open event listeners
 connection.once("open", () => {
-  console.log("connection stablished!");
+  console.log("connected!!");
 });
 // set connection error event listener
 connection.on("error", function (error) {
-  console.log("Cannot connect to db!", error.msg);
+  console.log("Cannot connect to db with error message: ", error.msg);
 });
