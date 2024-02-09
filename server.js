@@ -29,8 +29,13 @@ function authenticateToken(req, res, next) {
   });
 }
 
+const corsOptions = {
+  origin: process.env.ALLOW_ORIGIN,
+  optionsSuccessStatus: 200,
+};
+
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.post("/signin", (req, res) => {
   bcrypt.genSalt(10, function (err, salt) {
