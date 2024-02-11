@@ -18,6 +18,8 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    firstname: String,
+    lastname: String,
   },
   { _id: false } // disable ID because i have unique username an email instead
 );
