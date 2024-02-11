@@ -3,7 +3,9 @@ const express = require("express"),
   userModel = require("./models/users"),
   cors = require("cors"),
   bcrypt = require("bcrypt"),
-  jwt = require("jsonwebtoken");
+  jwt = require("jsonwebtoken"),
+  multer = require("multer");
+const upload = multer();
 require("dotenv").config();
 require("./database/connection");
 
@@ -52,11 +54,11 @@ function generateHash(req, res, next) {
 // this middleware used for verifying the user's password using bcrypt library
 function verifyPassword(req, res, next) {
   bcrypt.compare(req.body.password, req.hash, function (err, result) {
-    if (err) return res.status(500);
+    if (err) return res.status(500).send("error occured!");
     if (result) {
       next();
     } else {
-      res.json({ result: false, msg: "your password not correct!" });
+      res.status(403).send("your password not correct!");
     }
   });
 }
@@ -151,10 +153,11 @@ app.post("/rename", authenticateToken, function (req, res) {
 
 app.post(
   "/changepass",
+  upload.none(),
   function (req, res, next) {
-    if (req.body.currpass === req.body.newpass) {
+    if (req.body.password === req.body.newpass) {
       res.status(400).send("the password is same as the current pass!");
-    } else if (req.body.currpass !== req.body.repeatpass) {
+    } else if (req.body.newpass !== req.body.repeatpass) {
       res
         .status(400)
         .send("The reapeated password is not as same as the new password!");
@@ -163,24 +166,30 @@ app.post(
     }
   },
   authenticateToken,
-  function (req, res) {
+  function (req, res, next) {
     userModel
       .findOne({ username: req.user.username })
       .then(function (user) {
         req.hash = user.password;
-        req.user_id = user._id;
         next();
       })
       .catch((error) => {
         console.log(error);
-        res.status(500).json({ result: false, msg: "the user not exist!" });
+        res.status(500).send("the user not exist!");
       });
   },
   verifyPassword,
+  function (req, res, next) {
+    req.body.password = req.body.newpass;
+    next();
+  },
   generateHash,
   function (req, res) {
     userModel
-      .updateOne({ _id: req.user_id }, { $set: { password: req.body.newpass } })
+      .updateOne(
+        { username: req.user.username },
+        { $set: { password: req.body.password } }
+      )
       .then((v) => res.send("The password changed successfully!"))
       .catch((error) =>
         res.status(500).send("error while changing the password!")
