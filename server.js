@@ -7,9 +7,14 @@ const express = require("express"),
 require("dotenv").config();
 require("./database/connection");
 
+const corsOptions = {
+  origin: process.env.ALLOW_ORIGIN,
+  optionsSuccessStatus: 200,
+};
+
 function generateAccessToken(username) {
   return jwt.sign({ username: username }, process.env.SECURE_TOKEN, {
-    expiresIn: "1h",
+    expiresIn: "2 days",
   });
 }
 
@@ -45,24 +50,16 @@ function generateHash(req, res, next) {
 }
 
 // this middleware used for verifying the user's password using bcrypt library
-function verifyPassword(req, res) {
+function verifyPassword(req, res, next) {
   bcrypt.compare(req.body.password, req.hash, function (err, result) {
     if (err) return res.status(500);
     if (result) {
-      res.json({
-        result: true,
-        token: generateAccessToken(req.body.username),
-      });
+      next();
     } else {
       res.json({ result: false, msg: "your password not correct!" });
     }
   });
 }
-
-const corsOptions = {
-  origin: process.env.ALLOW_ORIGIN,
-  optionsSuccessStatus: 200,
-};
 
 app.use(express.json());
 app.use(cors(corsOptions));
@@ -109,7 +106,13 @@ app.post(
         res.status(500).json({ result: false, msg: "the user not exist!" });
       });
   },
-  verifyPassword
+  verifyPassword,
+  function (req, res) {
+    res.json({
+      result: true,
+      token: generateAccessToken(req.body.username),
+    });
+  }
 );
 
 app.post("/Auth", authenticateToken, (req, res) => {
@@ -145,6 +148,45 @@ app.post("/rename", authenticateToken, function (req, res) {
       res.status(500).send("An error occured!");
     });
 });
+
+app.post(
+  "/changepass",
+  function (req, res, next) {
+    if (req.body.currpass === req.body.newpass) {
+      res.status(400).send("the password is same as the current pass!");
+    } else if (req.body.currpass !== req.body.repeatpass) {
+      res
+        .status(400)
+        .send("The reapeated password is not as same as the new password!");
+    } else {
+      next();
+    }
+  },
+  authenticateToken,
+  function (req, res) {
+    userModel
+      .findOne({ username: req.user.username })
+      .then(function (user) {
+        req.hash = user.password;
+        req.user_id = user._id;
+        next();
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).json({ result: false, msg: "the user not exist!" });
+      });
+  },
+  verifyPassword,
+  generateHash,
+  function (req, res) {
+    userModel
+      .updateOne({ _id: req.user_id }, { $set: { password: req.body.newpass } })
+      .then((v) => res.send("The password changed successfully!"))
+      .catch((error) =>
+        res.status(500).send("error while changing the password!")
+      );
+  }
+);
 
 app.get("/", (req, res) => {
   res.send("HELLO WELCOME ❤");
