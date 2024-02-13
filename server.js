@@ -133,20 +133,19 @@ app.post("/Auth", authenticateToken, (req, res) => {
     });
 });
 
-app.post("/rename", authenticateToken, function (req, res) {
+app.post("/rename", authenticateToken, upload.none(), function (req, res) {
   userModel
-    .updateOne(req.user.username, {
-      $set: { firstname: req.body.firstname, lastname: req.body.lastname },
-    })
+    .updateOne(
+      { username: req.user.username },
+      {
+        $set: { firstname: req.body.firstname, lastname: req.body.lastname },
+      }
+    )
     .then((v) => {
-      res.json({
-        username: v.username,
-        email: v.email,
-        firstname: v.firstname,
-        lastname: v.lastname,
-      });
+      res.json({ firstname: req.body.firstname, lastname: req.body.lastname });
     })
     .catch((err) => {
+      console.log(err);
       res.status(500).send("An error occured!");
     });
 });
