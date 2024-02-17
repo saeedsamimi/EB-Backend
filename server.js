@@ -5,7 +5,8 @@ const express = require("express"),
   cors = require("cors"),
   bcrypt = require("bcrypt"),
   jwt = require("jsonwebtoken"),
-  multer = require("multer");
+  multer = require("multer"),
+  mongoose = require(mongoose);
 const upload = multer();
 require("dotenv").config();
 require("./database/connection");
@@ -242,6 +243,22 @@ app.get("/getemployee", authenticateToken, findUserId, async (req, res) => {
     res.send("Error: " + (err.message || err.code));
   }
 });
+
+app.post(
+  "/editemployee",
+  upload.none(),
+  authenticateToken,
+  async (req, res) => {
+    try {
+      objectId = mongoose.Types.ObjectId.createFromHexString(req.body.id);
+      console.log(objectId);
+      await employeeModel.findByIdAndUpdate(objectId, { $set: req.body });
+      res.send("The Update was successfull!");
+    } catch (err) {
+      res.send("Error: " + (err.message || err.code));
+    }
+  }
+);
 
 app.get("/", (req, res) => {
   res.send("HELLO WELCOME ❤");
