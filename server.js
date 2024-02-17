@@ -1,6 +1,7 @@
 const express = require("express"),
   app = express(),
   userModel = require("./models/users"),
+  employeeModel = require("./models/employee"),
   cors = require("cors"),
   bcrypt = require("bcrypt"),
   jwt = require("jsonwebtoken"),
@@ -100,8 +101,10 @@ app.post(
     userModel
       .findOne(findUser)
       .then(function (user) {
-        req.hash = user.password;
-        next();
+        if (user) {
+          req.hash = user.password;
+          next();
+        } else throw new Error();
       })
       .catch((error) => {
         console.log(error);
@@ -195,6 +198,50 @@ app.post(
       );
   }
 );
+
+async function findUserId(req, res, next) {
+  try {
+    const user = await userModel.findOne({ username: req.user.username });
+    if (user) {
+      req.user.id = user._id;
+      next();
+    } else res.status(403);
+  } catch (err) {
+    res.status(500).send("An error occured: " + err.code);
+  }
+}
+
+app.post(
+  "/addemployee",
+  upload.none(),
+  authenticateToken,
+  findUserId,
+  async (req, res) => {
+    try {
+      const employee = new employeeModel(req.body);
+      employee.boss = req.user.id;
+      await employee.save();
+      if (employee.isNew) {
+        res
+          .status(500)
+          .send(
+            "the employee cannot save. please check the inputs or try again later!"
+          );
+      } else res.send("The new employee was inserted successfully");
+    } catch (err) {
+      res.send("Error: " + (err.message || err.code));
+    }
+  }
+);
+
+app.get("/getemployee", authenticateToken, findUserId, async (req, res) => {
+  try {
+    const searchRes = await employeeModel.find({ boss: req.user.id });
+    res.json(searchRes);
+  } catch (err) {
+    res.send("Error: " + (err.message || err.code));
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("HELLO WELCOME ❤");
