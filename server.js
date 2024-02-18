@@ -6,7 +6,7 @@ const express = require("express"),
   bcrypt = require("bcrypt"),
   jwt = require("jsonwebtoken"),
   multer = require("multer"),
-  mongoose = require(mongoose);
+  mongoose = require("mongoose");
 const upload = multer();
 require("dotenv").config();
 require("./database/connection");
@@ -108,7 +108,6 @@ app.post(
         } else throw new Error();
       })
       .catch((error) => {
-        console.log(error);
         res.status(500).json({ result: false, msg: "the user not exist!" });
       });
   },
@@ -251,11 +250,25 @@ app.post(
   async (req, res) => {
     try {
       objectId = mongoose.Types.ObjectId.createFromHexString(req.body.id);
-      console.log(objectId);
       await employeeModel.findByIdAndUpdate(objectId, { $set: req.body });
-      res.send("The Update was successfull!");
+      res.json(req.body);
     } catch (err) {
       res.send("Error: " + (err.message || err.code));
+    }
+  }
+);
+
+app.delete(
+  "/delemployee",
+  express.text(),
+  authenticateToken,
+  async (req, res) => {
+    try {
+      objectId = mongoose.Types.ObjectId.createFromHexString(req.body);
+      await employeeModel.findByIdAndDelete(objectId);
+      res.send("The delete operation was successfull!");
+    } catch (err) {
+      res.status(500).send("Error: " + (err.message || err.code));
     }
   }
 );
